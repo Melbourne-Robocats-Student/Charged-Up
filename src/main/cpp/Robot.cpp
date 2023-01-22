@@ -15,6 +15,10 @@
 #include <frc/Encoder.h>
 #include <frc/AnalogGyro.h>
 
+#define BOOST_SPEED (0.7)
+#define NORMAL_SPEED (0.55)
+#define AUTO_BACK_DIST (200)
+
 // Config vars
 // bool m_is2022Robot = true;
 // bool m_balancing_mode = false;
@@ -86,7 +90,7 @@ void Robot::RobotPeriodic() {
  */
 void Robot::AutonomousInit() {
   // Mode debug
-  m_autoSelected = m_chooser.GetSelected();
+  // m_autoSelected = m_chooser.GetSelected();
   // m_autoSelected = SmartDashboard::GetString("Auto Selector", kAutoNameDefault);
   // fmt::print("Auto selected: {}\n", m_autoSelected);
 
@@ -122,7 +126,7 @@ void Robot::AutonomousPeriodic() {
   // }
   
   // Drive toward charging station while less than set distance
-  if(m_encoder_left.GetDistance() < 200 && m_encoder_right.GetDistance() < 200)
+  if(m_encoder_left.GetDistance() < AUTO_BACK_DIST && m_encoder_right.GetDistance() < AUTO_BACK_DIST)
   {
     // // Check gyro angle greater than 9 degrees
     // if(m_gyro.GetAngle() > 9)
@@ -151,10 +155,10 @@ void Robot::TeleopPeriodic() {
 
   // Boost mode
   if (m_xbox.GetRightBumper()){
-    m_maxspeed = 0.7;
+    m_maxspeed = BOOST_SPEED;
   }
   else {
-    m_maxspeed = 0.5;
+    m_maxspeed = NORMAL_SPEED;
   }
 
   m_left_motorspeed = m_xbox.GetLeftY()*-m_maxspeed;
