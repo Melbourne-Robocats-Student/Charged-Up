@@ -16,18 +16,33 @@
 #include <frc/XboxController.h>
 #include <frc/Encoder.h>
 #include <frc/AnalogGyro.h>
+#include <frc/Timer.h>
 
 #define BOOST_SPEED (0.7)
 #define NORMAL_SPEED (0.55)
 #define AUTO_BACK_DIST (200)
+#define VERTICAL_ENCODER_PULSE (0.05)
+#define HORIZONTAL_ENCPODER_PULSE (0.05)
+#define CLAWSPEED (0.5)
+#define VERTICAL_STOP_POSITION (1038)
+#define HORIZONTAL_STOP_POSITION (701)
+
+void BalancingMode();
 
 // Config vars
 // bool m_is2022Robot = true;
-// bool m_balancing_mode = false;
+bool m_balancing_mode = false;
+bool m_cone_deposit = false;
+units::time::second_t timer_time;
+frc::Timer m_claw_timer = frc::Timer(); 
 
 // Motors
 frc::PWMSparkMax m_Spark_left{0};
 frc::PWMSparkMax m_Spark_right{8};
+
+frc::PWMSparkMax m_vertical{1}; //double check port no and controller
+frc::PWMSparkMax m_horizontal{2};
+frc::PWMSparkMax m_claw{3};
 
 // frc::VictorSP m_VictorSP_left{0}; 
 // frc::VictorSP m_VictorSP_right{8};
@@ -35,6 +50,8 @@ frc::PWMSparkMax m_Spark_right{8};
 // Encoders
 frc::Encoder m_encoder_left{8,9, true};
 frc::Encoder m_encoder_right{6,7, false};
+frc::Encoder m_encoder_vertical{0,1};
+frc::Encoder m_encoder_horizontal{2,3};
 
 // Gyro
 frc::AnalogGyro m_gyro{0}; //check channel number
@@ -99,53 +116,78 @@ void Robot::AutonomousInit() {
   // Init encoders
   m_encoder_left.Reset();
   m_encoder_right.Reset();
+
   m_encoder_left.SetDistancePerPulse(0.0521); // distance per pulse in inches
   m_encoder_right.SetDistancePerPulse(0.0521); // distance per pulse in inches
+
+  m_encoder_vertical.Reset();
+  m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
+  m_encoder_horizontal.Reset();
+  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCPODER_PULSE);
+
+  m_claw_timer.Start();
+
 }
 
 void Robot::AutonomousPeriodic() {
   // TODO: place game piece
-
-  // IF BALANCING
-  // if (m_balancing_mode == true)
-  // {
-  //   double robotPitchAngle = m_gyro.GetAngle();
-  //   // if gyro is positive drive forward at slow speed (30%) until angle is zero
-  //   if(robotPitchAngle > 0)
-  //   {
-  //     m_drive_system.TankDrive(-0.4, 0.4);
-  //   }
-  //   // if gyro is negative drive backwards at slow speed
-  //   else if (robotPitchAngle < 0)
-  //   {
-  //     m_drive_system.TankDrive(-0.4, 0.4);
-  //   }
-  //   // if gyro is level STOP MOTORS
-  //   else
-  //   {
-  //     m_drive_system.TankDrive(0, 0);
-  //   }
-  // }
-  
-  // Drive toward charging station while less than set distance
-  if(m_encoder_left.GetDistance() < AUTO_BACK_DIST && m_encoder_right.GetDistance() < AUTO_BACK_DIST)
+  if(m_cone_deposit == false)
   {
-    // // Check gyro angle greater than 9 degrees
-    // if(m_gyro.GetAngle() > 9)
-    // {
-    //   // If gyro angle is  then start balancing == set a flag
-    //   m_balancing_mode = true; 
-    //   m_drive_system.TankDrive(0.7,-0.7);
-    // }
-    // else 
-    // {
-      // If not keep driving
-      m_drive_system.TankDrive(0.5,-0.5);
+  //extend vertical thingy (check what distance cone needs move up)
+  //extend horizontal thingy (check distance)
+  //release tha claaaw & set m_cone_deposit == true
+  //retract everything???
+    if(m_encoder_vertical.GetDistance() < VERTICAL_STOP_POSITION)
+    {
+      m_vertical.Set(0.5);
+      timer_time = units::time::second_t(m_claw_timer.Get()+10);
     }
-  else
+
+    if(m_encoder_horizontal.GetDistance() < HORIZONTAL_STOP_POSITION)
+    {
+      m_horizontal.Set(0.5);
+    }
+
+    if(m_encoder_horizontal.GetDistance() >= HORIZONTAL_STOP_POSITION && m_encoder_vertical.GetDistance() >= VERTICAL_STOP_POSITION)
+    {
+      m_claw.Set(-CLAWSPEED);
+      if(m_claw_timer.HasElapsed(timer_time))
+      {
+        m_claw.Set(0);
+        m_cone_deposit = true;
+      }
+    }
+
+  }
+  
+  if(m_cone_deposit == true)
   {
-    // Stop driving
-    m_drive_system.TankDrive(0, 0);
+    // IF BALANCING
+    if (m_balancing_mode == true)
+    {
+      BalancingMode();
+    }
+      
+    // Drive toward charging station while less than set distance
+    if(m_encoder_left.GetDistance() < AUTO_BACK_DIST && m_encoder_right.GetDistance() < AUTO_BACK_DIST)
+    {
+      // // Check gyro angle greater than 9 degrees
+      // if(m_gyro.GetAngle() > 9)
+      // {
+      //   // If gyro angle is  then start balancing == set a flag
+      //   m_balancing_mode = true; 
+      //   m_drive_system.TankDrive(0.7,-0.7);
+      // }
+      // else 
+      // {
+        // If not keep driving
+        m_drive_system.TankDrive(0.5,-0.5);
+      }
+    else
+    {
+      // Stop driving
+      m_drive_system.TankDrive(0, 0);
+    }
   }
 }
 
@@ -164,9 +206,58 @@ void Robot::TeleopPeriodic() {
   }
 
   m_left_motorspeed = m_xbox.GetLeftY()*-m_maxspeed;
-  m_right_motorspeed = m_xbox.GetRightY()*(m_maxspeed);
+  m_right_motorspeed = m_xbox.GetRightY()*m_maxspeed;
 
   m_drive_system.TankDrive(m_left_motorspeed, m_right_motorspeed);
+
+  //Verticle Extension
+
+  if (m_xbox.GetPOV()==0)
+  {
+    m_vertical.Set(0.6);
+
+  }
+
+  if (m_xbox.GetPOV()==180)
+  {
+    m_vertical.Set(-0.6);
+
+    if (m_encoder_vertical.GetDistance()<=0)
+    {
+      m_vertical.Set(0);
+    }
+    
+  }
+  
+  //HORIZONTAL EXTENSION
+  if (m_xbox.GetYButtonPressed())
+  {
+    m_horizontal.Set(0.6);
+  }
+
+  if (m_xbox.GetAButtonPressed())
+  {
+    m_vertical.Set(-0.6);
+
+    if (m_encoder_horizontal.GetDistance()<=0)
+    {
+      m_horizontal.Set(0);
+    }
+    
+  }
+
+  //CLAW GRABBY THINGY
+
+  if (m_xbox.GetRightTriggerAxis()>0)
+  {
+    m_claw.Set(CLAWSPEED*m_xbox.GetRightTriggerAxis());
+  }
+
+  if (m_xbox.GetLeftTriggerAxis()>0)
+  {
+    m_claw.Set(-CLAWSPEED*m_xbox.GetLeftTriggerAxis());
+  }
+
 }
 
 void Robot::DisabledInit() {}
@@ -180,6 +271,27 @@ void Robot::TestPeriodic() {}
 void Robot::SimulationInit() {}
 
 void Robot::SimulationPeriodic() {}
+
+void BalancingMode() {
+
+    double robotPitchAngle = m_gyro.GetAngle();
+    // if gyro is positive drive forward at slow speed (30%) until angle is zero
+    if(robotPitchAngle > 0)
+    {
+      m_drive_system.TankDrive(-0.4, 0.4);
+    }
+    // if gyro is negative drive backwards at slow speed
+    else if (robotPitchAngle < 0)
+    {
+      m_drive_system.TankDrive(-0.4, 0.4);
+    }
+    // if gyro is level STOP MOTORS
+    else
+    {
+      m_drive_system.TankDrive(0, 0);
+    }
+  
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
