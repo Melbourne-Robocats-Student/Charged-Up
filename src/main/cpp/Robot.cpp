@@ -7,6 +7,8 @@
 #include "Robot.h"
 
 #include <fmt/core.h>
+#include "cameraserver/CameraServer.h"
+#include "cscore_oo.h"
 
 #include <frc/smartdashboard/SmartDashboard.h>
 
@@ -21,11 +23,11 @@
 #define BOOST_SPEED (0.7)
 #define NORMAL_SPEED (0.55)
 #define AUTO_BACK_DIST (200)
-#define VERTICAL_ENCODER_PULSE (0.05)
-#define HORIZONTAL_ENCPODER_PULSE (0.05)
-#define CLAWSPEED (0.5)
-#define VERTICAL_STOP_POSITION (1038)
-#define HORIZONTAL_STOP_POSITION (701)
+#define VERTICAL_ENCODER_PULSE (0.05) //check
+#define HORIZONTAL_ENCPODER_PULSE (0.05) //check
+#define CLAWSPEED (0.5) //check
+#define VERTICAL_STOP_POSITION (1038) //check
+#define HORIZONTAL_STOP_POSITION (701) //check
 
 void BalancingMode();
 
@@ -44,9 +46,6 @@ frc::PWMSparkMax m_vertical{1}; //double check port no and controller
 frc::PWMSparkMax m_horizontal{2};
 frc::PWMSparkMax m_claw{3};
 
-// frc::VictorSP m_VictorSP_left{0}; 
-// frc::VictorSP m_VictorSP_right{8};
-
 // Encoders
 frc::Encoder m_encoder_left{8,9, true};
 frc::Encoder m_encoder_right{6,7, false};
@@ -58,10 +57,16 @@ frc::AnalogGyro m_gyro{0}; //check channel number
 
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
-// frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_VictorSP_left,m_VictorSP_right};
 
 // Xbox Controller
 frc::XboxController m_xbox{0};
+
+// Cameras
+cs::UsbCamera m_camera_claw;
+cs::UsbCamera m_camera_drive;
+
+// Network tables
+nt::NetworkTableEntry m_cameraSelection;
 
 void Robot::RobotInit() {
   // Debug encoder to dashboard
@@ -72,7 +77,12 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
 
   m_gyro.Calibrate();
-
+  m_camera_claw = frc::CameraServer::StartAutomaticCapture("Claw Camera", 0); //check ports
+  m_camera_drive = frc::CameraServer::StartAutomaticCapture("Drive Camera", 1);
+  m_camera_claw.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
+  m_camera_drive.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
+  m_cameraSelection = nt::NetworkTableInstance::GetDefault().GetTable("")->GetEntry("CameraSelection");
+  m_cameraSelection.SetString(m_camera_claw.GetName());
   // if(m_is2022Robot)
   // {
   //  m_drive_system = frc::DifferentialDrive(m_Spark_left,m_Spark_right);
@@ -109,8 +119,8 @@ void Robot::RobotPeriodic() {
  */
 void Robot::AutonomousInit() {
   // Mode debug
-  // m_autoSelected = m_chooser.GetSelected();
-  // m_autoSelected = SmartDashboard::GetString("Auto Selector", kAutoNameDefault);
+  //m_autoSelected = m_chooser.GetSelected();
+  //m_autoSelected = SmartDashboard::GetString("Auto Selector", kAutoNameDefault);
   // fmt::print("Auto selected: {}\n", m_autoSelected);
 
   // Init encoders
@@ -140,7 +150,7 @@ void Robot::AutonomousPeriodic() {
     if(m_encoder_vertical.GetDistance() < VERTICAL_STOP_POSITION)
     {
       m_vertical.Set(0.5);
-      timer_time = units::time::second_t(m_claw_timer.Get()+10);
+      timer_time = units::time::second_t(m_claw_timer.Get())+units::time::second_t(10);
     }
 
     if(m_encoder_horizontal.GetDistance() < HORIZONTAL_STOP_POSITION)
@@ -196,6 +206,13 @@ void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic() {
   double m_maxspeed;
   double m_left_motorspeed, m_right_motorspeed;
+
+  if (m_xbox.GetXButton()) {
+    m_cameraSelection.SetString(m_camera_claw.GetName());
+  }
+  if (m_xbox.GetBButton()) {
+    m_cameraSelection.SetString(m_camera_drive.GetName());
+  }
 
   // Boost mode
   if (m_xbox.GetRightBumper()){
