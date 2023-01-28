@@ -6,6 +6,8 @@
 
 #include "Robot.h"
 
+#include <iostream> 
+
 #include <fmt/core.h>
 #include "cameraserver/CameraServer.h"
 #include "cscore_oo.h"
@@ -16,6 +18,7 @@
 #include <frc/motorcontrol/VictorSP.h>
 #include <frc/drive/DifferentialDrive.h>
 #include <frc/XboxController.h>
+#include <frc/Joystick.h>
 #include <frc/Encoder.h>
 #include <frc/AnalogGyro.h>
 #include <frc/Timer.h>
@@ -61,6 +64,10 @@ frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Sp
 // Xbox Controller
 frc::XboxController m_xbox{0};
 
+//Joy Stick Controller
+
+frc::Joystick m_joystick{1};
+
 // Cameras
 cs::UsbCamera m_camera_claw;
 cs::UsbCamera m_camera_drive;
@@ -75,6 +82,7 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
+  
 
   m_gyro.Calibrate();
   m_camera_claw = frc::CameraServer::StartAutomaticCapture("Claw Camera", 0); //check ports
@@ -207,19 +215,14 @@ void Robot::TeleopPeriodic() {
   double m_maxspeed;
   double m_left_motorspeed, m_right_motorspeed;
 
-  if (m_xbox.GetXButton()) {
-    m_cameraSelection.SetString(m_camera_claw.GetName());
-  }
-  if (m_xbox.GetBButton()) {
-    m_cameraSelection.SetString(m_camera_drive.GetName());
-  }
-
-  // Boost mode
+    // Boost mode
   if (m_xbox.GetRightBumper()){
     m_maxspeed = BOOST_SPEED;
+    
   }
   else {
     m_maxspeed = NORMAL_SPEED;
+    
   }
 
   m_left_motorspeed = m_xbox.GetLeftY()*-m_maxspeed;
@@ -229,13 +232,13 @@ void Robot::TeleopPeriodic() {
 
   //Verticle Extension
 
-  if (m_xbox.GetPOV()==0)
+  if (m_joystick.GetPOV()==0)
   {
     m_vertical.Set(0.6);
 
   }
 
-  if (m_xbox.GetPOV()==180)
+  if (m_xbox.GetPOV(180)==-1)
   {
     m_vertical.Set(-0.6);
 
@@ -247,12 +250,12 @@ void Robot::TeleopPeriodic() {
   }
   
   //HORIZONTAL EXTENSION
-  if (m_xbox.GetYButtonPressed())
+  if (m_xbox.GetRawAxis(1)==1)
   {
     m_horizontal.Set(0.6);
   }
 
-  if (m_xbox.GetAButtonPressed())
+  if (m_xbox.GetRawAxis(1)==-1)
   {
     m_vertical.Set(-0.6);
 
@@ -265,14 +268,22 @@ void Robot::TeleopPeriodic() {
 
   //CLAW GRABBY THINGY
 
-  if (m_xbox.GetRightTriggerAxis()>0)
+  if (m_joystick.GetTrigger() == 1)
   {
-    m_claw.Set(CLAWSPEED*m_xbox.GetRightTriggerAxis());
+    m_claw.Set(CLAWSPEED);
   }
 
-  if (m_xbox.GetLeftTriggerAxis()>0)
+  if (m_joystick.GetTop() == 1)
   {
-    m_claw.Set(-CLAWSPEED*m_xbox.GetLeftTriggerAxis());
+    m_claw.Set(-CLAWSPEED);
+  }
+
+  //Cameras
+  if (m_xbox.GetXButton()) {
+    m_cameraSelection.SetString(m_camera_claw.GetName());
+  }
+  if (m_xbox.GetBButton()) {
+    m_cameraSelection.SetString(m_camera_drive.GetName());
   }
 
 }
