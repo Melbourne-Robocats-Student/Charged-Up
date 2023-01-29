@@ -73,12 +73,11 @@ frc::AnalogGyro m_gyro{0}; //check channel number
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
 
-// Xbox Controller
-frc::XboxController m_xbox{0};
+// Xbox Controller (should be mapped to port 1)
+frc::XboxController m_xbox{1};
 
-//Joy Stick Controller
-
-frc::Joystick m_joystick{1};
+//Joy Stick Controller (should be mapped to port 0)
+frc::Joystick m_joystick{0};
 
 // Cameras
 cs::UsbCamera m_camera_claw;
@@ -95,7 +94,7 @@ void Robot::RobotInit() {
   m_led.SetData(m_ledBuffer);
   m_led.Start();
   for (int i = 0; i < kLength; i++) {
-      m_ledBuffer[i].SetHSV(250, 255, 59);
+      m_ledBuffer[i].SetHSV(320, 255, 50);
     }
   // Set the LEDs
   m_led.SetData(m_ledBuffer);
@@ -124,7 +123,26 @@ void Robot::RobotInit() {
   //   m_drive_system = frc::DifferentialDrive(m_VictorSP_left,m_VictorSP_right);
   // }
 
+  //Check port mapping for joystick and gamepad
+  if (m_xbox.GetType() != frc::GenericHID::kXInputGamepad)
+  {
+    std::cout << std::endl << std::endl << std::endl;
+    std::cout << "********** xbox controller mapped to wrong port ***********" << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
 
+    while(true);
+    // FIXME - instead of infinite while loop, should throw an exception
+  }
+  if (m_joystick.GetType() != frc::GenericHID::kHIDJoystick)
+  {
+    std::cout << std::endl << std::endl << std::endl;
+    std::cout << "*********** joystick mapped to wrong port ***********" << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
+
+    while(true);
+    // FIXME - instead of infinite while loop, should throw an exception
+  }
+  
 }
 
 /**
@@ -184,9 +202,16 @@ void Robot::AutonomousPeriodic() {
       timer_time = units::time::second_t(m_claw_timer.Get())+units::time::second_t(10);
     }
 
+    else{
+      m_vertical.Set(0);
+    }
+
     if(m_encoder_horizontal.GetDistance() < HORIZONTAL_STOP_POSITION)
     {
       m_horizontal.Set(0.5);
+    }
+    else{
+      m_horizontal.Set(0);
     }
 
     if(m_encoder_horizontal.GetDistance() >= HORIZONTAL_STOP_POSITION && m_encoder_vertical.GetDistance() >= VERTICAL_STOP_POSITION)
@@ -262,7 +287,7 @@ void Robot::TeleopPeriodic() {
 
   }
 
-  if (m_xbox.GetPOV()==180)
+  if (m_joystick.GetPOV()==180)
   {
     m_vertical.Set(-0.6);
 
@@ -274,18 +299,21 @@ void Robot::TeleopPeriodic() {
   }
   
   //HORIZONTAL EXTENSION
-  if (m_xbox.GetRawAxis(1)==1)
+  if (m_joystick.GetRawAxis(1)==1)
   {
     m_horizontal.Set(0.6);
   }
 
-  if (m_xbox.GetRawAxis(1)==-1)
+  if (m_joystick.GetRawAxis(1)==-1)
   {
-    m_vertical.Set(-0.6);
-
+    
     if (m_encoder_horizontal.GetDistance()<=0)
     {
       m_horizontal.Set(0);
+    }
+    else{
+      m_horizontal.Set(-0.6);
+
     }
     
   }
@@ -310,7 +338,14 @@ void Robot::TeleopPeriodic() {
     m_cameraSelection.SetString(m_camera_drive.GetName());
   }
 
-  if(m_joystick.GetRawButtonPressed(11) == 1){
+  /*
+  std::cout << "button pressed " << std::endl;
+  std::cout << m_joystick.GetRawButton(11) << std::endl;
+  std::cout << m_joystick.GetRawButtonPressed(12) << std::endl;
+  */
+
+
+  if(m_joystick.GetRawButton(11)){
     // For every pixel
     for (int i = 0; i < kLength; i++) {
     //   // Calculate the hue - hue is easier for rainbows because the color
@@ -329,9 +364,9 @@ void Robot::TeleopPeriodic() {
   }
 
   //purple
-  if(m_joystick.GetRawButtonPressed(12)){
+  if(m_joystick.GetRawButton(12)){
     for (int i = 0; i < kLength; i++) {
-      m_ledBuffer[i].SetHSV(20, 255, 128);
+      m_ledBuffer[i].SetHSV(320, 255, 60);
     }
      // Set the LEDs
     m_led.SetData(m_ledBuffer);
