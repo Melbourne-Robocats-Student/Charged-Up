@@ -110,6 +110,7 @@ void Robot::RobotInit() {
   
   if(m_gyro.IsConnected() == true){
     m_gyro.Calibrate();
+    m_gyro.Reset();
   }
   else{
     std::cout << std::endl << std::endl << std::endl;
@@ -232,35 +233,30 @@ void Robot::AutonomousPeriodic() {
   
   if(m_cone_deposit == true)
   {
-    // IF BALANCING
-    if (m_balancing_mode == true)
-    {
-      BalancingMode();
-    }
-      
     // Drive toward charging station while less than set distance
-    /*if(m_encoder_left.GetDistance() >= AUTO_BACK_DIST && m_encoder_right.GetDistance() >= AUTO_BACK_DIST)
+    if(m_encoder_left.GetDistance() >= AUTO_BACK_DIST && m_encoder_right.GetDistance() >= AUTO_BACK_DIST)
     {
       // // Check gyro angle greater than 9 degrees
       if(m_gyro.GetAngle() > 9)
       {
-      // If gyro angle is  then start balancing == set a flag
-      m_balancing_mode = true; 
-      m_drive_system.TankDrive(0.7,-0.7);
+        // If gyro angle is  then start balancing == set a flag
+        m_balancing_mode = true;
       }
-      else 
-      {
-        // If not keep driving
-        m_drive_system.TankDrive(0.5,-0.5);
-      }
+    }
     else{
-      // Stop driving
-      m_drive_system.TankDrive(0, 0);
-    }*/
+      // drive to the start point of balancing mode
+      m_drive_system.TankDrive(0.5,-0.5);
+    }
+
+  } 
+  if(m_balancing_mode == true){
+    BalancingMode();
   }
+  
 }
 
 void Robot::TeleopInit() {
+  m_balancing_mode = false;
 }
 
 void Robot::TeleopPeriodic() {
@@ -391,22 +387,24 @@ void Robot::SimulationPeriodic() {}
 
 void BalancingMode() {
 
-    double robotPitchAngle = m_gyro.GetAngle();
-    // if gyro is positive drive forward at slow speed (30%) until angle is zero
-    if(robotPitchAngle > 0)
-    {
-      m_drive_system.TankDrive(-0.4, 0.4);
-    }
-    // if gyro is negative drive backwards at slow speed
-    else if (robotPitchAngle < 0)
-    {
-      m_drive_system.TankDrive(-0.4, 0.4);
-    }
-    // if gyro is level STOP MOTORS
-    else
-    {
-      m_drive_system.TankDrive(0, 0);
-    }
+  double robotPitchAngle = m_gyro.GetAngle();
+  double ANGLE_TOLERANCE_DEGREES = 2.5;
+
+  // if gyro is positive drive forward at slow speed (30%) until angle is zero
+  if(robotPitchAngle > ANGLE_TOLERANCE_DEGREES)
+  {
+    m_drive_system.TankDrive(-0.4, 0.4);
+  }
+  // if gyro is negative drive backwards at slow speed
+  else if (robotPitchAngle < ANGLE_TOLERANCE_DEGREES)
+  {
+    m_drive_system.TankDrive(0.4, -0.4);
+  }
+  // if gyro is level STOP MOTORS
+  else
+  {
+    m_drive_system.TankDrive(0, 0);
+  }
   
 }
 
