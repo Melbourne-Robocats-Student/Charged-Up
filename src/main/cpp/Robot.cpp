@@ -107,8 +107,15 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
   
+  if(m_gyro.IsConnected() == true){
+    m_gyro.Calibrate();
+  }
+  else{
+    std::cout << std::endl << std::endl << std::endl;
+    std::cout << "********** Gyro not connected ***********" << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
+  }
 
-  m_gyro.Calibrate();
   m_camera_claw = frc::CameraServer::StartAutomaticCapture("Claw Camera", 0); //check ports
   m_camera_drive = frc::CameraServer::StartAutomaticCapture("Drive Camera", 1);
   m_camera_claw.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
