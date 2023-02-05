@@ -5,7 +5,6 @@
 // Melbourne RoboCats #5648
 
 #include "Robot.h"
-
 #include <iostream> 
 
 #include <fmt/core.h>
@@ -49,6 +48,7 @@ void BalancingMode();
 // Config vars
 // bool m_is2022Robot = true;
 bool m_balancing_mode = false;
+
 bool m_cone_deposit = false;
 units::time::second_t timer_time;
 frc::Timer m_claw_timer = frc::Timer(); 
@@ -86,6 +86,7 @@ cs::UsbCamera m_camera_drive;
 // Network tables
 nt::NetworkTableEntry m_cameraSelection;
 
+
 void Robot::RobotInit() {
 
   // Default to a length of 60, start empty output
@@ -114,14 +115,6 @@ void Robot::RobotInit() {
   m_camera_drive.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
   m_cameraSelection = nt::NetworkTableInstance::GetDefault().GetTable("")->GetEntry("CameraSelection");
   m_cameraSelection.SetString(m_camera_claw.GetName());
-  // if(m_is2022Robot)
-  // {
-  //  m_drive_system = frc::DifferentialDrive(m_Spark_left,m_Spark_right);
-  // }
-  // else
-  // {    
-  //   m_drive_system = frc::DifferentialDrive(m_VictorSP_left,m_VictorSP_right);
-  // }
 
   //Check port mapping for joystick and gamepad
   if (m_xbox.GetType() != frc::GenericHID::kXInputGamepad)
@@ -141,7 +134,9 @@ void Robot::RobotInit() {
 
     while(true);
     // FIXME - instead of infinite while loop, should throw an exception
-  }
+  };
+
+ // BalancingMode{} FIXME - Work out how to give this instructions pls :(
   
 }
 
@@ -235,25 +230,24 @@ void Robot::AutonomousPeriodic() {
     }
       
     // Drive toward charging station while less than set distance
-    if(m_encoder_left.GetDistance() < AUTO_BACK_DIST && m_encoder_right.GetDistance() < AUTO_BACK_DIST)
+    /*if(m_encoder_left.GetDistance() >= AUTO_BACK_DIST && m_encoder_right.GetDistance() >= AUTO_BACK_DIST)
     {
       // // Check gyro angle greater than 9 degrees
-      // if(m_gyro.GetAngle() > 9)
-      // {
-      //   // If gyro angle is  then start balancing == set a flag
-      //   m_balancing_mode = true; 
-      //   m_drive_system.TankDrive(0.7,-0.7);
-      // }
-      // else 
-      // {
+      if(m_gyro.GetAngle() > 9)
+      {
+      // If gyro angle is  then start balancing == set a flag
+      m_balancing_mode = true; 
+      m_drive_system.TankDrive(0.7,-0.7);
+      }
+      else 
+      {
         // If not keep driving
         m_drive_system.TankDrive(0.5,-0.5);
       }
-    else
-    {
+    else{
       // Stop driving
       m_drive_system.TankDrive(0, 0);
-    }
+    }*/
   }
 }
 
