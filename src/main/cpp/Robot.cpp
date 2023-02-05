@@ -19,7 +19,7 @@
 #include <frc/XboxController.h>
 #include <frc/Joystick.h>
 #include <frc/Encoder.h>
-#include <frc/AnalogGyro.h>
+#include <frc/ADXRS450_Gyro.h>
 #include <frc/Timer.h>
 #include <frc/AddressableLED.h>
 
@@ -68,7 +68,7 @@ frc::Encoder m_encoder_vertical{0,1};
 frc::Encoder m_encoder_horizontal{2,3};
 
 // Gyro
-frc::AnalogGyro m_gyro{0}; //check channel number
+frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kMXP};
 
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
