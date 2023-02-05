@@ -42,6 +42,7 @@
 #define CLAWSPEED (0.5) //check
 #define VERTICAL_STOP_POSITION (1038) //check
 #define HORIZONTAL_STOP_POSITION (701) //check
+#define CLAW_OPEN_TIME_SECONDS (10)
 
 void BalancingMode();
 
@@ -186,6 +187,7 @@ void Robot::AutonomousInit() {
   m_encoder_horizontal.Reset();
   m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCPODER_PULSE);
 
+  m_claw_timer.Reset();   //FIXME - check if reset needs to be called before or after start()
   m_claw_timer.Start();
 
 }
@@ -201,9 +203,8 @@ void Robot::AutonomousPeriodic() {
     if(m_encoder_vertical.GetDistance() < VERTICAL_STOP_POSITION)
     {
       m_vertical.Set(0.5);
-      timer_time = units::time::second_t(m_claw_timer.Get())+units::time::second_t(10);
+      timer_time = units::time::second_t(m_claw_timer.Get()) + units::time::second_t(CLAW_OPEN_TIME_SECONDS);
     }
-
     else{
       m_vertical.Set(0);
     }
@@ -216,7 +217,8 @@ void Robot::AutonomousPeriodic() {
       m_horizontal.Set(0);
     }
 
-    if(m_encoder_horizontal.GetDistance() >= HORIZONTAL_STOP_POSITION && m_encoder_vertical.GetDistance() >= VERTICAL_STOP_POSITION)
+    if( (m_encoder_horizontal.GetDistance() >= HORIZONTAL_STOP_POSITION) && 
+        (m_encoder_vertical.GetDistance()   >= VERTICAL_STOP_POSITION  ) )
     {
       m_claw.Set(-CLAWSPEED);
       if(m_claw_timer.HasElapsed(timer_time))
