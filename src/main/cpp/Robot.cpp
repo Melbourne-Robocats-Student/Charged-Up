@@ -63,9 +63,9 @@ frc::PWMSparkMax m_horizontal{2};
 frc::PWMSparkMax m_claw{3};
 
 // Encoders
-frc::Encoder m_encoder_left{8,9, true};
-frc::Encoder m_encoder_right{6,7, false};
-frc::Encoder m_encoder_vertical{0,1};
+frc::Encoder m_encoder_left{8,9, true};  //motor left side
+frc::Encoder m_encoder_right{6,7, false};  //motor right side
+frc::Encoder m_encoder_vertical{0,1};   
 frc::Encoder m_encoder_horizontal{2,3};
 
 // Gyro
@@ -118,6 +118,10 @@ void Robot::RobotInit() {
     std::cout << std::endl << std::endl << std::endl;
   }
 
+  //encoders for limits
+  m_encoder_left.Reset();
+  m_encoder_right.Reset();
+
   m_camera_claw = frc::CameraServer::StartAutomaticCapture("Claw Camera", 0); //check ports
   m_camera_drive = frc::CameraServer::StartAutomaticCapture("Drive Camera", 1);
   m_camera_claw.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
@@ -157,7 +161,26 @@ void Robot::RobotInit() {
  * <p> This runs after the mode specific periodic functions, but before
  * LiveWindow and SmartDashboard integrated updating.
  */
-void Robot::RobotPeriodic() {}
+void Robot::RobotPeriodic() {
+  // Init encoders
+  m_encoder_vertical.Reset();
+  m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
+  m_encoder_horizontal.Reset();
+  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCPODER_PULSE);
+
+  //if(m_encoder_horizontal )
+  /*
+  If horiz. encoder is less than min extension 
+  don't allow vert. encoder to fall lower than 20 cm above base.
+
+  dont let horiz. encoder go past legal extension
+
+  buffer on vert. encoder max
+
+  claw buffers
+  */
+
+}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -177,9 +200,6 @@ void Robot::AutonomousInit() {
   // fmt::print("Auto selected: {}\n", m_autoSelected);
 
   // Init encoders
-  m_encoder_left.Reset();
-  m_encoder_right.Reset();
-
   m_encoder_left.SetDistancePerPulse(0.0521); // distance per pulse in inches
   m_encoder_right.SetDistancePerPulse(0.0521); // distance per pulse in inches
 
