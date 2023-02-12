@@ -38,11 +38,17 @@
 #define NORMAL_SPEED (0.55)
 #define AUTO_BACK_DIST (200)
 #define VERTICAL_ENCODER_PULSE (0.05) //check
-#define HORIZONTAL_ENCPODER_PULSE (0.05) //check
+#define HORIZONTAL_ENCODER_PULSE (0.05) //check
 #define CLAWSPEED (0.5) //check
 #define VERTICAL_STOP_POSITION (1038) //check
 #define HORIZONTAL_STOP_POSITION (701) //check
 #define CLAW_OPEN_TIME_SECONDS (10)
+#define MAX_HORIZONTAL_EXTENSION (122) //max horiz. extension
+#define MIN_HORIZONTAL_EXTENSION (0)  //check smallest point of movement
+#define MIN_HORIZONTAL_NOGO (60) //check relativ eno go zone measurements
+#define MAX_VERTICAL_EXTENSION (198) //max vert. extension - change in relation to starting point
+#define MIN_VERTICAL_EXTENSION (0)  //to the ground
+#define MIN_VERTICAL_NOGO (20)  //check no go zone around battery
 
 void BalancingMode();
 
@@ -56,17 +62,18 @@ frc::Timer m_claw_timer = frc::Timer();
 
 // Motors
 frc::PWMSparkMax m_Spark_left{0};
-frc::PWMSparkMax m_Spark_right{8};
+frc::PWMSparkMax m_Spark_right{1};
 
 frc::PWMSparkMax m_vertical{1}; //double check port no and controller
 frc::PWMSparkMax m_horizontal{2};
 frc::PWMSparkMax m_claw{3};
 
 // Encoders
-frc::Encoder m_encoder_left{8,9, true};  //motor left side
-frc::Encoder m_encoder_right{6,7, false};  //motor right side
-frc::Encoder m_encoder_vertical{0,1};   
-frc::Encoder m_encoder_horizontal{2,3};
+frc::Encoder m_encoder_left{2,3, true};  //motor left side
+frc::Encoder m_encoder_right{0,1, false};  //motor right side
+frc::Encoder m_encoder_vertical{6,7};   
+frc::Encoder m_encoder_horizontal{8,9};
+frc::Encoder m_encoder_claw{4,5};   //check
 
 // Gyro
 frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kMXP};
@@ -163,10 +170,10 @@ void Robot::RobotInit() {
  */
 void Robot::RobotPeriodic() {
   // Init encoders
-  m_encoder_vertical.Reset();
-  m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
-  m_encoder_horizontal.Reset();
-  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCPODER_PULSE);
+  // m_encoder_vertical.Reset();
+  // m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
+  // m_encoder_horizontal.Reset();
+  // m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
 
   //if(m_encoder_horizontal )
   /*
@@ -179,6 +186,20 @@ void Robot::RobotPeriodic() {
 
   claw buffers
   */
+ /*if(m_encoder_horizontal.GetDistance() <= MIN_HORIZONTAL_NOGO){
+   if(m_encoder_vertical.GetDistance() <= MIN_VERTICAL_NOGO){
+    //stop motor??
+   }
+   //stop motor??
+  }
+
+  if(m_encoder_horizontal.GetDistance() <= MIN_HORIZONTAL_EXTENSION){
+    //stop motors
+  }
+  if(m_encoder_vertical.GetDistance() <= MIN_VERTICAL_EXTENSION){
+
+    //stop motors
+  }*/
 
 }
 
@@ -206,7 +227,7 @@ void Robot::AutonomousInit() {
   m_encoder_vertical.Reset();
   m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
   m_encoder_horizontal.Reset();
-  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCPODER_PULSE);
+  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
 
   m_claw_timer.Reset();   //FIXME - check if reset needs to be called before or after start()
   m_claw_timer.Start();
