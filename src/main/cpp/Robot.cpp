@@ -28,7 +28,7 @@
   static constexpr int kLength = 5;
 
   // Must be a PWM header, not MXP or DIO
-  frc::AddressableLED m_led{4};
+  frc::AddressableLED m_led{5};
   std::array<frc::AddressableLED::LEDData, kLength>
       m_ledBuffer;  // Reuse the buffer
   // Store what the last hue of the first pixel is
@@ -64,9 +64,9 @@ frc::Timer m_claw_timer = frc::Timer();
 frc::PWMSparkMax m_Spark_left{0};
 frc::PWMSparkMax m_Spark_right{1};
 
-frc::PWMSparkMax m_vertical{1}; //double check port no and controller
-frc::PWMSparkMax m_horizontal{2};
-frc::PWMSparkMax m_claw{3};
+frc::PWMSparkMax m_vertical{4}; //double check port no and controller
+frc::PWMSparkMax m_horizontal{3};
+frc::PWMSparkMax m_claw{2};
 
 // Encoders
 frc::Encoder m_encoder_left{2,3, true};  //motor left side
@@ -76,7 +76,7 @@ frc::Encoder m_encoder_horizontal{8,9};
 frc::Encoder m_encoder_claw{4,5};   //check
 
 // Gyro
-frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kMXP};
+frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kOnboardCS0};
 
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
@@ -114,8 +114,10 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
-  
-  if(m_gyro.IsConnected() == true){
+  frc::SmartDashboard::PutData("Drive System", &m_drive_system);
+  frc::SmartDashboard::PutData("Gyro", &m_gyro);
+
+  /*if(m_gyro.IsConnected() == true){
     m_gyro.Calibrate();
     m_gyro.Reset();
   }
@@ -123,7 +125,10 @@ void Robot::RobotInit() {
     std::cout << std::endl << std::endl << std::endl;
     std::cout << "********** Gyro not connected ***********" << std::endl;
     std::cout << std::endl << std::endl << std::endl;
-  }
+  }*/
+    //frc::ADXRS450_Gyro gyro;
+    m_gyro.Calibrate();
+    m_gyro.Reset();
 
   //encoders for limits
   m_encoder_left.Reset();
@@ -143,7 +148,7 @@ void Robot::RobotInit() {
     std::cout << "********** xbox controller mapped to wrong port ***********" << std::endl;
     std::cout << std::endl << std::endl << std::endl;
 
-    while(true);
+    //while(true);
     // FIXME - instead of infinite while loop, should throw an exception
   }
   if (m_joystick.GetType() != frc::GenericHID::kHIDJoystick)
@@ -152,11 +157,11 @@ void Robot::RobotInit() {
     std::cout << "*********** joystick mapped to wrong port ***********" << std::endl;
     std::cout << std::endl << std::endl << std::endl;
 
-    while(true);
+    //while(true);
     // FIXME - instead of infinite while loop, should throw an exception
   };
 
- // BalancingMode{} FIXME - Work out how to give this instructions pls :(
+ //BalancingMode(); FIXME - Work out how to give this instructions pls :(
   
 }
 
@@ -169,12 +174,7 @@ void Robot::RobotInit() {
  * LiveWindow and SmartDashboard integrated updating.
  */
 void Robot::RobotPeriodic() {
-  // Init encoders
-  // m_encoder_vertical.Reset();
-  // m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
-  // m_encoder_horizontal.Reset();
-  // m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
-
+  
   //if(m_encoder_horizontal )
   /*
   If horiz. encoder is less than min extension 
@@ -186,20 +186,8 @@ void Robot::RobotPeriodic() {
 
   claw buffers
   */
- /*if(m_encoder_horizontal.GetDistance() <= MIN_HORIZONTAL_NOGO){
-   if(m_encoder_vertical.GetDistance() <= MIN_VERTICAL_NOGO){
-    //stop motor??
-   }
-   //stop motor??
-  }
-
-  if(m_encoder_horizontal.GetDistance() <= MIN_HORIZONTAL_EXTENSION){
-    //stop motors
-  }
-  if(m_encoder_vertical.GetDistance() <= MIN_VERTICAL_EXTENSION){
-
-    //stop motors
-  }*/
+    std::cout << "*********** Gyro Angle *********** " << m_gyro.GetAngle() << " ***********";
+    std::cout << std::endl;
 
 }
 
@@ -235,7 +223,7 @@ void Robot::AutonomousInit() {
 }
 
 void Robot::AutonomousPeriodic() {
-  // TODO: place game piece
+  // place game piece
   if(m_cone_deposit == false)
   {
   //extend vertical thingy (check what distance cone needs move up)
@@ -331,43 +319,29 @@ void Robot::TeleopPeriodic() {
   {
     m_vertical.Set(-0.6);
 
-    if (m_encoder_vertical.GetDistance()<=0)
+    /*if (m_encoder_vertical.GetDistance()<=0)
     {
       m_vertical.Set(0);
-    }
+    }*/
     
   }
-  
+  if (m_joystick.GetPOV()==-1)
+  {
+    m_vertical.Set(0);
+    }
   //HORIZONTAL EXTENSION
-  if (m_joystick.GetRawAxis(1)==1)
-  {
-    m_horizontal.Set(0.6);
-  }
-
-  if (m_joystick.GetRawAxis(1)==-1)
-  {
-    
-    if (m_encoder_horizontal.GetDistance()<=0)
-    {
-      m_horizontal.Set(0);
-    }
-    else{
-      m_horizontal.Set(-0.6);
-
-    }
-    
-  }
+  m_horizontal.Set(m_joystick.GetRawAxis(1));
 
   //CLAW GRABBY THINGY
 
   if (m_joystick.GetTrigger() == 1)
   {
     m_claw.Set(CLAWSPEED);
-  }
-
-  if (m_joystick.GetTop() == 1)
+  } else if (m_joystick.GetTop() == 1)
   {
     m_claw.Set(-CLAWSPEED);
+  } else {
+    m_claw.Set(0);
   }
 
   //Cameras
