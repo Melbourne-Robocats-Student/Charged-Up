@@ -25,7 +25,7 @@
 
 //LED includes
 
-  static constexpr int kLength = 5;
+  static constexpr int kLength = 40;
 
   // Must be a PWM header, not MXP or DIO
   frc::AddressableLED m_led{5};
@@ -34,12 +34,12 @@
   // Store what the last hue of the first pixel is
   int firstPixelHue = 0;
 
-#define BOOST_SPEED (0.7)
-#define NORMAL_SPEED (0.55)
+#define BOOST_SPEED (0.9)
+#define NORMAL_SPEED (0.7)
 #define AUTO_BACK_DIST (200)
 #define VERTICAL_ENCODER_PULSE (0.05) //check
 #define HORIZONTAL_ENCODER_PULSE (0.05) //check
-#define CLAWSPEED (0.5) //check
+#define CLAWSPEED (0.8) //check
 #define VERTICAL_STOP_POSITION (1038) //check
 #define HORIZONTAL_STOP_POSITION (701) //check
 #define CLAW_OPEN_TIME_SECONDS (10)
@@ -71,9 +71,9 @@ frc::PWMSparkMax m_claw{2};
 // Encoders
 frc::Encoder m_encoder_left{2,3, true};  //motor left side
 frc::Encoder m_encoder_right{0,1, false};  //motor right side
-frc::Encoder m_encoder_vertical{6,7};   
+frc::Encoder m_encoder_vertical{4,5};   
 frc::Encoder m_encoder_horizontal{8,9};
-frc::Encoder m_encoder_claw{4,5};   //check
+frc::Encoder m_encoder_claw{6,7};   //check
 
 // Gyro
 frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kOnboardCS0};
@@ -97,7 +97,7 @@ nt::NetworkTableEntry m_cameraSelection;
 
 void Robot::RobotInit() {
 
-  // Default to a length of 60, start empty output
+  // Default to a length of 40, start empty output
   // Length is expensive to set, so only set it once, then just update data
   m_led.SetLength(kLength);
   m_led.SetData(m_ledBuffer);
@@ -357,7 +357,14 @@ void Robot::TeleopPeriodic() {
   std::cout << m_joystick.GetRawButton(11) << std::endl;
   std::cout << m_joystick.GetRawButtonPressed(12) << std::endl;
   */
-
+ if(m_joystick.GetRawButton(3)){
+    std::cout << "Vertical Encoder count: " << m_encoder_vertical.GetDistance()/m_encoder_vertical.GetDistancePerPulse() << std::endl;
+    std::cout << "Horizontal Encoder count: " << m_encoder_horizontal.GetDistance()/m_encoder_horizontal.GetDistancePerPulse() << std::endl;
+    std::cout << "Claw Encoder count: " << m_encoder_claw.GetDistance()/m_encoder_claw.GetDistancePerPulse() << std::endl;
+    std::cout << "Left Encoder count: " << m_encoder_left.GetDistance()/m_encoder_right.GetDistancePerPulse() << std::endl;
+    std::cout << "Right Encoder count: " << m_encoder_right.GetDistance()/m_encoder_right.GetDistancePerPulse() << std::endl;
+    std::cout << std::endl;
+ }
 
   if(m_joystick.GetRawButton(11)){
     // For every pixel
