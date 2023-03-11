@@ -36,13 +36,13 @@
 
 #define BOOST_SPEED (0.9)
 #define NORMAL_SPEED (0.7)
-#define AUTO_BACK_DIST (200)
+#define AUTO_BACK_DIST (-200)
 #define VERTICAL_ENCODER_PULSE (0.05) //check
 #define HORIZONTAL_ENCODER_PULSE (0.05) //check
-#define CLAWSPEED (0.8) //check
+#define CLAWSPEED (1) //check
 #define VERTICAL_STOP_POSITION (1038) //check
-#define HORIZONTAL_STOP_POSITION (701) //check
-#define CLAW_OPEN_TIME_SECONDS (10)
+#define HORIZONTAL_STOP_POSITION (55) //check (full extension 1800)
+#define CLAW_OPEN_TIME_SECONDS (2)
 #define MAX_HORIZONTAL_EXTENSION (122) //max horiz. extension
 #define MIN_HORIZONTAL_EXTENSION (0)  //check smallest point of movement
 #define MIN_HORIZONTAL_NOGO (60) //check relativ eno go zone measurements
@@ -58,14 +58,15 @@ bool m_balancing_mode = false;
 
 bool m_cone_deposit = false;
 units::time::second_t timer_time;
+int countdown = 0;
 frc::Timer m_claw_timer = frc::Timer(); 
 
 // Motors
 frc::PWMSparkMax m_Spark_left{0};
 frc::PWMSparkMax m_Spark_right{1};
 
-frc::PWMSparkMax m_vertical{4}; //double check port no and controller
-frc::PWMSparkMax m_horizontal{3};
+frc::PWMSparkMax m_vertical{3}; //double check port no and controller
+frc::PWMSparkMax m_horizontal{4};
 frc::PWMSparkMax m_claw{2};
 
 // Encoders
@@ -114,6 +115,9 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
+  frc::SmartDashboard::PutData("Claw Encoder", &m_encoder_claw);
+  frc::SmartDashboard::PutData("Vertical Encoder", &m_encoder_vertical);
+  frc::SmartDashboard::PutData("Horizontal Encoder", &m_encoder_horizontal);
   frc::SmartDashboard::PutData("Drive System", &m_drive_system);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
@@ -217,53 +221,37 @@ void Robot::AutonomousInit() {
   m_encoder_horizontal.Reset();
   m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
 
-  m_claw_timer.Reset();   //FIXME - check if reset needs to be called before or after start()
-  m_claw_timer.Start();
-
 }
 
 void Robot::AutonomousPeriodic() {
   // place game piece
   if(m_cone_deposit == false)
   {
-  //extend vertical thingy (check what distance cone needs move up)
   //extend horizontal thingy (check distance)
   //release tha claaaw & set m_cone_deposit == true
   //retract everything???
-    if(m_encoder_vertical.GetDistance() < VERTICAL_STOP_POSITION)
-    {
-      m_vertical.Set(0.5);
-      timer_time = units::time::second_t(m_claw_timer.Get()) + units::time::second_t(CLAW_OPEN_TIME_SECONDS);
-    }
-    else{
-      m_vertical.Set(0);
-    }
 
     if(m_encoder_horizontal.GetDistance() < HORIZONTAL_STOP_POSITION)
     {
       m_horizontal.Set(0.5);
-    }
+      }
     else{
       m_horizontal.Set(0);
-    }
-
-    if( (m_encoder_horizontal.GetDistance() >= HORIZONTAL_STOP_POSITION) && 
-        (m_encoder_vertical.GetDistance()   >= VERTICAL_STOP_POSITION  ) )
-    {
-      m_claw.Set(-CLAWSPEED);
-      if(m_claw_timer.HasElapsed(timer_time))
+      /*m_claw.Set(-CLAWSPEED);
+      countdown = countdown +1;
+      if(countdown >= 50)
       {
         m_claw.Set(0);
-        m_cone_deposit = true;
       }
+      m_cone_deposit = true;
     }
 
   }
   
   if(m_cone_deposit == true)
-  {
+  {*/
     // Drive toward charging station while less than set distance
-    if(m_encoder_left.GetDistance() >= AUTO_BACK_DIST && m_encoder_right.GetDistance() >= AUTO_BACK_DIST)
+    if(m_encoder_left.GetDistance() <= AUTO_BACK_DIST && m_encoder_right.GetDistance() <= AUTO_BACK_DIST)
     {
       // // Check gyro angle greater than 9 degrees
       if(m_gyro.GetAngle() > 9)
@@ -274,13 +262,13 @@ void Robot::AutonomousPeriodic() {
     }
     else{
       // drive to the start point of balancing mode
-      m_drive_system.TankDrive(0.5,-0.5);
+      m_drive_system.TankDrive(-0.6,0.6);
     }
 
-  } 
-  if(m_balancing_mode == true){
+  } }
+  /*if(m_balancing_mode == true){
     BalancingMode();
-  }
+  }*/
   
 }
 
@@ -311,13 +299,13 @@ void Robot::TeleopPeriodic() {
 
   if (m_joystick.GetPOV()==0)
   {
-    m_vertical.Set(0.6);
+    m_horizontal.Set(0.6);
 
   }
 
   if (m_joystick.GetPOV()==180)
   {
-    m_vertical.Set(-0.6);
+    m_horizontal.Set(-0.6);
 
     /*if (m_encoder_vertical.GetDistance()<=0)
     {
@@ -327,10 +315,10 @@ void Robot::TeleopPeriodic() {
   }
   if (m_joystick.GetPOV()==-1)
   {
-    m_vertical.Set(0);
+    m_horizontal.Set(0);
     }
   //HORIZONTAL EXTENSION
-  m_horizontal.Set(m_joystick.GetRawAxis(1));
+  m_vertical.Set(m_joystick.GetRawAxis(1));
 
   //CLAW GRABBY THINGY
 
