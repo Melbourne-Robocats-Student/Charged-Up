@@ -36,12 +36,12 @@
 
 #define BOOST_SPEED (0.9)
 #define NORMAL_SPEED (0.7)
-#define AUTO_BACK_DIST (-200)
+#define AUTO_BACK_DIST (-100) //240 at 80% speed, 200 at 40%
 #define VERTICAL_ENCODER_PULSE (0.05) //check
 #define HORIZONTAL_ENCODER_PULSE (0.05) //check
 #define CLAWSPEED (1) //check
 #define VERTICAL_STOP_POSITION (1038) //check
-#define HORIZONTAL_STOP_POSITION (55) //check (full extension 1800)
+#define HORIZONTAL_STOP_POSITION (45) //check (full extension 1800)
 #define CLAW_OPEN_TIME_SECONDS (2)
 #define MAX_HORIZONTAL_EXTENSION (122) //max horiz. extension
 #define MIN_HORIZONTAL_EXTENSION (0)  //check smallest point of movement
@@ -57,9 +57,7 @@ void BalancingMode();
 bool m_balancing_mode = false;
 
 bool m_cone_deposit = false;
-units::time::second_t timer_time;
-int countdown = 0;
-frc::Timer m_claw_timer = frc::Timer(); 
+
 
 // Motors
 frc::PWMSparkMax m_Spark_left{0};
@@ -121,16 +119,6 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Drive System", &m_drive_system);
   frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
-  /*if(m_gyro.IsConnected() == true){
-    m_gyro.Calibrate();
-    m_gyro.Reset();
-  }
-  else{
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout << "********** Gyro not connected ***********" << std::endl;
-    std::cout << std::endl << std::endl << std::endl;
-  }*/
-    //frc::ADXRS450_Gyro gyro;
     m_gyro.Calibrate();
     m_gyro.Reset();
 
@@ -164,8 +152,6 @@ void Robot::RobotInit() {
     //while(true);
     // FIXME - instead of infinite while loop, should throw an exception
   };
-
- //BalancingMode(); FIXME - Work out how to give this instructions pls :(
   
 }
 
@@ -213,62 +199,67 @@ void Robot::AutonomousInit() {
   // fmt::print("Auto selected: {}\n", m_autoSelected);
 
   // Init encoders
-  m_encoder_left.SetDistancePerPulse(0.0521); // distance per pulse in inches
-  m_encoder_right.SetDistancePerPulse(0.0521); // distance per pulse in inches
+  m_encoder_left.Reset();
+  m_encoder_right.Reset();
+
+  m_encoder_left.SetDistancePerPulse(0.084); // distance per pulse in inches
+  m_encoder_right.SetDistancePerPulse(0.07); // distance per pulse in inches
 
   m_encoder_vertical.Reset();
   m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
   m_encoder_horizontal.Reset();
   m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
 
+  m_cone_deposit = false;
 }
 
 void Robot::AutonomousPeriodic() {
   // place game piece
-  if(m_cone_deposit == false)
+  if(m_balancing_mode == true)
   {
-  //extend horizontal thingy (check distance)
-  //release tha claaaw & set m_cone_deposit == true
-  //retract everything???
-
-    if(m_encoder_horizontal.GetDistance() < HORIZONTAL_STOP_POSITION)
-    {
-      m_horizontal.Set(0.5);
-      }
-    else{
-      m_horizontal.Set(0);
-      /*m_claw.Set(-CLAWSPEED);
-      countdown = countdown +1;
-      if(countdown >= 50)
-      {
-        m_claw.Set(0);
-      }
-      m_cone_deposit = true;
-    }
-
-  }
-  
-  if(m_cone_deposit == true)
-  {*/
-    // Drive toward charging station while less than set distance
-    if(m_encoder_left.GetDistance() <= AUTO_BACK_DIST && m_encoder_right.GetDistance() <= AUTO_BACK_DIST)
-    {
-      // // Check gyro angle greater than 9 degrees
-      if(m_gyro.GetAngle() > 9)
-      {
-        // If gyro angle is  then start balancing == set a flag
-        m_balancing_mode = true;
-      }
-    }
-    else{
-      // drive to the start point of balancing mode
-      m_drive_system.TankDrive(-0.6,0.6);
-    }
-
-  } }
-  /*if(m_balancing_mode == true){
     BalancingMode();
-  }*/
+  }
+  else
+  {
+    if(m_cone_deposit == false)
+    {
+    //extend horizontal thingy (check distance)
+    //release tha claaaw & set m_cone_deposit == true
+    //retract everything???
+
+      if(m_encoder_left.GetDistance() <= 10 && m_encoder_right.GetDistance() <= 10)
+      {
+        m_drive_system.TankDrive(0.5,-0.5);
+        }
+      else{
+        m_drive_system.TankDrive(0,0);
+        m_cone_deposit = true;
+
+      }
+    }
+    
+    if(m_cone_deposit == true)
+    {
+      // Drive toward charging station while less than set distance
+      if(m_encoder_left.GetDistance() <= AUTO_BACK_DIST || m_encoder_right.GetDistance() <= AUTO_BACK_DIST)
+      {
+        m_drive_system.TankDrive(0,0);
+
+      }
+      else{
+        // drive to the start point of balancing mode
+        if(m_gyro.GetAngle() > 5)
+        {
+          m_balancing_mode = true;
+        }
+        else
+        {
+        m_drive_system.TankDrive(-0.4,0.4); // previous .8
+        }
+      }
+    }
+  } 
+
   
 }
 
@@ -406,7 +397,7 @@ void BalancingMode() {
     m_drive_system.TankDrive(-0.4, 0.4);
   }
   // if gyro is negative drive backwards at slow speed
-  else if (robotPitchAngle < ANGLE_TOLERANCE_DEGREES)
+  else if (robotPitchAngle < -ANGLE_TOLERANCE_DEGREES)
   {
     m_drive_system.TankDrive(0.4, -0.4);
   }
