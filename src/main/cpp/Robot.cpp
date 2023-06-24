@@ -58,6 +58,8 @@ bool m_balancing_mode = false;
 
 bool m_cone_deposit = false;
 
+double m_speedmod = 0;
+int m_balanceStateFlag = 0; // Forward = 0, Balanced = 1, Backward = 2
 
 // Motors
 frc::PWMSparkMax m_Spark_left{0};
@@ -176,8 +178,6 @@ void Robot::RobotPeriodic() {
 
   claw buffers
   */
-    std::cout << "*********** Gyro Angle *********** " << m_gyro.GetAngle() << " ***********";
-    std::cout << std::endl;
 
 }
 
@@ -233,7 +233,7 @@ void Robot::AutonomousPeriodic() {
         }
       else{
         m_drive_system.TankDrive(0,0);
-        m_cone_deposit = true;
+        m_cone_deposit = true; //COMMENT OUT THIS LINE TO DISABLE MOVE BACKWARD AND BALANCE
 
       }
     }
@@ -248,13 +248,13 @@ void Robot::AutonomousPeriodic() {
       }
       else{
         // drive to the start point of balancing mode
-        if(m_gyro.GetAngle() > 5)
+        if(m_gyro.GetAngle() > 7)
         {
           m_balancing_mode = true;
         }
         else
         {
-        m_drive_system.TankDrive(-0.4,0.4); // previous .8
+        m_drive_system.TankDrive(-0.8,0.8); // previous .8
         }
       }
     }
@@ -392,19 +392,36 @@ void BalancingMode() {
   double ANGLE_TOLERANCE_DEGREES = 2.5;
 
   // if gyro is positive drive forward at slow speed (30%) until angle is zero
-  if(robotPitchAngle > ANGLE_TOLERANCE_DEGREES)
+  if(robotPitchAngle > ANGLE_TOLERANCE_DEGREES && m_speedmod == 0)
   {
-    m_drive_system.TankDrive(-0.4, 0.4);
+    m_drive_system.TankDrive(-0.6 + m_speedmod, 0.6 - m_speedmod);
+    m_balanceStateFlag = 0;
+    std::cout << "GOING FORWARD - Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() << " Speed: " << (0.6 - m_speedmod);
+    std::cout << std::endl;
   }
   // if gyro is negative drive backwards at slow speed
   else if (robotPitchAngle < -ANGLE_TOLERANCE_DEGREES)
   {
-    m_drive_system.TankDrive(0.4, -0.4);
+    m_drive_system.TankDrive(0.5, -0.5);
+    m_balanceStateFlag = 2;
+    std::cout << "GOING BACKWARD - Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() << " Speed: " << (- 0.6 + m_speedmod);
+    std::cout << std::endl;
   }
   // if gyro is level STOP MOTORS
+  else if (m_balanceStateFlag == 0)
+  {
+    m_speedmod = m_speedmod + 0.05;
+    m_drive_system.TankDrive(0, 0);
+    m_balanceStateFlag = 1;
+    std::cout << "BALANCING: Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle();
+    std::cout << std::endl;
+  } 
   else
   {
     m_drive_system.TankDrive(0, 0);
+    m_balanceStateFlag = 1;
+    std::cout << "BALANCING: Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() ;
+    std::cout << std::endl;
   }
   
 }
