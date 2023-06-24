@@ -17,7 +17,6 @@
 #include <frc/motorcontrol/VictorSP.h>
 #include <frc/drive/DifferentialDrive.h>
 #include <frc/XboxController.h>
-#include <frc/Joystick.h>
 #include <frc/Encoder.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/Timer.h>
@@ -37,23 +36,10 @@
 #define BOOST_SPEED (0.9)
 #define NORMAL_SPEED (0.7)
 #define AUTO_BACK_DIST (-100) //240 at 80% speed, 200 at 40%
-#define VERTICAL_ENCODER_PULSE (0.05) //check
-#define HORIZONTAL_ENCODER_PULSE (0.05) //check
-#define CLAWSPEED (1) //check
-#define VERTICAL_STOP_POSITION (1038) //check
-#define HORIZONTAL_STOP_POSITION (45) //check (full extension 1800)
-#define CLAW_OPEN_TIME_SECONDS (2)
-#define MAX_HORIZONTAL_EXTENSION (122) //max horiz. extension
-#define MIN_HORIZONTAL_EXTENSION (0)  //check smallest point of movement
-#define MIN_HORIZONTAL_NOGO (60) //check relativ eno go zone measurements
-#define MAX_VERTICAL_EXTENSION (198) //max vert. extension - change in relation to starting point
-#define MIN_VERTICAL_EXTENSION (0)  //to the ground
-#define MIN_VERTICAL_NOGO (20)  //check no go zone around battery
 
 void BalancingMode();
 
 // Config vars
-// bool m_is2022Robot = true;
 bool m_balancing_mode = false;
 
 bool m_cone_deposit = false;
@@ -62,31 +48,18 @@ double m_speedmod = 0;
 int m_balanceStateFlag = 0; // Forward = 0, Balanced = 1, Backward = 2
 
 // Motors
-frc::PWMSparkMax m_Spark_left{0};
-frc::PWMSparkMax m_Spark_right{1};
-
-frc::PWMSparkMax m_vertical{3}; //double check port no and controller
-frc::PWMSparkMax m_horizontal{4};
-frc::PWMSparkMax m_claw{2};
+frc::PWMSparkMax m_Spark_left{1};
+frc::PWMSparkMax m_Spark_right{2};
 
 // Encoders
 frc::Encoder m_encoder_left{2,3, true};  //motor left side
 frc::Encoder m_encoder_right{0,1, false};  //motor right side
-frc::Encoder m_encoder_vertical{4,5};   
-frc::Encoder m_encoder_horizontal{8,9};
-frc::Encoder m_encoder_claw{6,7};   //check
-
-// Gyro
-frc::ADXRS450_Gyro m_gyro{frc::SPI::Port::kOnboardCS0};
 
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
 
 // Xbox Controller (should be mapped to port 1)
 frc::XboxController m_xbox{1};
-
-//Joy Stick Controller (should be mapped to port 0)
-frc::Joystick m_joystick{0};
 
 // Cameras
 cs::UsbCamera m_camera_claw;
@@ -115,14 +88,8 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
-  frc::SmartDashboard::PutData("Claw Encoder", &m_encoder_claw);
-  frc::SmartDashboard::PutData("Vertical Encoder", &m_encoder_vertical);
-  frc::SmartDashboard::PutData("Horizontal Encoder", &m_encoder_horizontal);
   frc::SmartDashboard::PutData("Drive System", &m_drive_system);
-  frc::SmartDashboard::PutData("Gyro", &m_gyro);
 
-    m_gyro.Calibrate();
-    m_gyro.Reset();
 
   //encoders for limits
   m_encoder_left.Reset();
@@ -140,15 +107,6 @@ void Robot::RobotInit() {
   {
     std::cout << std::endl << std::endl << std::endl;
     std::cout << "********** xbox controller mapped to wrong port ***********" << std::endl;
-    std::cout << std::endl << std::endl << std::endl;
-
-    //while(true);
-    // FIXME - instead of infinite while loop, should throw an exception
-  }
-  if (m_joystick.GetType() != frc::GenericHID::kHIDJoystick)
-  {
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout << "*********** joystick mapped to wrong port ***********" << std::endl;
     std::cout << std::endl << std::endl << std::endl;
 
     //while(true);
@@ -204,18 +162,11 @@ void Robot::AutonomousInit() {
 
   m_encoder_left.SetDistancePerPulse(0.084); // distance per pulse in inches
   m_encoder_right.SetDistancePerPulse(0.07); // distance per pulse in inches
-
-  m_encoder_vertical.Reset();
-  m_encoder_vertical.SetDistancePerPulse(VERTICAL_ENCODER_PULSE);
-  m_encoder_horizontal.Reset();
-  m_encoder_horizontal.SetDistancePerPulse(HORIZONTAL_ENCODER_PULSE);
-
-  m_cone_deposit = false;
 }
 
 void Robot::AutonomousPeriodic() {
   // place game piece
-  if(m_balancing_mode == true)
+  /* if(m_balancing_mode == true)
   {
     BalancingMode();
   }
@@ -258,7 +209,7 @@ void Robot::AutonomousPeriodic() {
         }
       }
     }
-  } 
+  } */
 
   
 }
@@ -286,43 +237,7 @@ void Robot::TeleopPeriodic() {
 
   m_drive_system.TankDrive(m_left_motorspeed, m_right_motorspeed);
 
-  //Verticle Extension
-
-  if (m_joystick.GetPOV()==0)
-  {
-    m_horizontal.Set(0.6);
-
-  }
-
-  if (m_joystick.GetPOV()==180)
-  {
-    m_horizontal.Set(-0.6);
-
-    /*if (m_encoder_vertical.GetDistance()<=0)
-    {
-      m_vertical.Set(0);
-    }*/
-    
-  }
-  if (m_joystick.GetPOV()==-1)
-  {
-    m_horizontal.Set(0);
-    }
-  //HORIZONTAL EXTENSION
-  m_vertical.Set(m_joystick.GetRawAxis(1));
-
-  //CLAW GRABBY THINGY
-
-  if (m_joystick.GetTrigger() == 1)
-  {
-    m_claw.Set(CLAWSPEED);
-  } else if (m_joystick.GetTop() == 1)
-  {
-    m_claw.Set(-CLAWSPEED);
-  } else {
-    m_claw.Set(0);
-  }
-
+  
   //Cameras
   if (m_xbox.GetXButton()) {
     m_cameraSelection.SetString(m_camera_claw.GetName());
@@ -336,16 +251,8 @@ void Robot::TeleopPeriodic() {
   std::cout << m_joystick.GetRawButton(11) << std::endl;
   std::cout << m_joystick.GetRawButtonPressed(12) << std::endl;
   */
- if(m_joystick.GetRawButton(3)){
-    std::cout << "Vertical Encoder count: " << m_encoder_vertical.GetDistance()/m_encoder_vertical.GetDistancePerPulse() << std::endl;
-    std::cout << "Horizontal Encoder count: " << m_encoder_horizontal.GetDistance()/m_encoder_horizontal.GetDistancePerPulse() << std::endl;
-    std::cout << "Claw Encoder count: " << m_encoder_claw.GetDistance()/m_encoder_claw.GetDistancePerPulse() << std::endl;
-    std::cout << "Left Encoder count: " << m_encoder_left.GetDistance()/m_encoder_right.GetDistancePerPulse() << std::endl;
-    std::cout << "Right Encoder count: " << m_encoder_right.GetDistance()/m_encoder_right.GetDistancePerPulse() << std::endl;
-    std::cout << std::endl;
- }
-
-  if(m_joystick.GetRawButton(11)){
+ 
+  /*if(m_joystick.GetRawButton(11)){
     // For every pixel
     for (int i = 0; i < kLength; i++) {
     //   // Calculate the hue - hue is easier for rainbows because the color
@@ -371,7 +278,7 @@ void Robot::TeleopPeriodic() {
      // Set the LEDs
     m_led.SetData(m_ledBuffer);
   }
-
+*/
 }
 
 void Robot::DisabledInit() {}
@@ -386,45 +293,7 @@ void Robot::SimulationInit() {}
 
 void Robot::SimulationPeriodic() {}
 
-void BalancingMode() {
-
-  double robotPitchAngle = m_gyro.GetAngle();
-  double ANGLE_TOLERANCE_DEGREES = 2.5;
-
-  // if gyro is positive drive forward at slow speed (30%) until angle is zero
-  if(robotPitchAngle > ANGLE_TOLERANCE_DEGREES && m_speedmod == 0)
-  {
-    m_drive_system.TankDrive(-0.6 + m_speedmod, 0.6 - m_speedmod);
-    m_balanceStateFlag = 0;
-    std::cout << "GOING FORWARD - Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() << " Speed: " << (0.6 - m_speedmod);
-    std::cout << std::endl;
-  }
-  // if gyro is negative drive backwards at slow speed
-  else if (robotPitchAngle < -ANGLE_TOLERANCE_DEGREES)
-  {
-    m_drive_system.TankDrive(0.5, -0.5);
-    m_balanceStateFlag = 2;
-    std::cout << "GOING BACKWARD - Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() << " Speed: " << (- 0.6 + m_speedmod);
-    std::cout << std::endl;
-  }
-  // if gyro is level STOP MOTORS
-  else if (m_balanceStateFlag == 0)
-  {
-    m_speedmod = m_speedmod + 0.05;
-    m_drive_system.TankDrive(0, 0);
-    m_balanceStateFlag = 1;
-    std::cout << "BALANCING: Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle();
-    std::cout << std::endl;
-  } 
-  else
-  {
-    m_drive_system.TankDrive(0, 0);
-    m_balanceStateFlag = 1;
-    std::cout << "BALANCING: Balance State: " << m_balanceStateFlag << ", Angle measured: " << m_gyro.GetAngle() ;
-    std::cout << std::endl;
-  }
-  
-}
+void BalancingMode() {}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
