@@ -237,25 +237,16 @@ void Robot::TeleopPeriodic() {
 
   m_drive_system.TankDrive(m_left_motorspeed, m_right_motorspeed);
 
-  
-  //Cameras
-  if (m_xbox.GetXButton()) {
-    m_cameraSelection.SetString(m_camera_claw.GetName());
-  }
-  if (m_xbox.GetBButton()) {
-    m_cameraSelection.SetString(m_camera_drive.GetName());
-  }
-
   /*
   std::cout << "button pressed " << std::endl;
   std::cout << m_joystick.GetRawButton(11) << std::endl;
   std::cout << m_joystick.GetRawButtonPressed(12) << std::endl;
   */
  
-  /*if(m_joystick.GetRawButton(11)){
+  if(m_xbox.GetBButton()){
     // For every pixel
     for (int i = 0; i < kLength; i++) {
-    //   // Calculate the hue - hue is easier for rainbows because the color
+    //   // Calculate the hue - hue is easier for rainbows because the colour
     //   // shape is a circle so only one value needs to precess
       const auto pixelHue = (firstPixelHue + (i * 180 / kLength)) % 180;
     //   // Set the value
@@ -271,14 +262,14 @@ void Robot::TeleopPeriodic() {
   }
 
   //purple
-  if(m_joystick.GetRawButton(12)){
+  if(m_xbox.GetXButton()){
     for (int i = 0; i < kLength; i++) {
       m_ledBuffer[i].SetHSV(320, 255, 60);
     }
      // Set the LEDs
     m_led.SetData(m_ledBuffer);
   }
-*/
+
 }
 
 void Robot::DisabledInit() {}
