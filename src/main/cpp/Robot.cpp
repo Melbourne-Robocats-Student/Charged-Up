@@ -164,7 +164,7 @@ void Robot::AutonomousPeriodic() {
    if(m_cone_deposit == false)
     {
 
-      if(m_encoder_left.GetDistance() <= 10 && m_encoder_right.GetDistance() <= 10)
+      if(m_encoder_left.GetDistance() <= 50 && m_encoder_right.GetDistance() <= 50)
       {
         m_drive_system.TankDrive(0.5,-0.5);
         }
