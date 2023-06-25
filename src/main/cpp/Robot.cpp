@@ -59,10 +59,9 @@ frc::Encoder m_encoder_right{0,1, false};  //motor right side
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
 
 // Xbox Controller (should be mapped to port 1)
-frc::XboxController m_xbox{1};
+frc::XboxController m_xbox{0};
 
-// Cameras
-cs::UsbCamera m_camera_claw;
+// Camera
 cs::UsbCamera m_camera_drive;
 
 // Network tables
@@ -95,12 +94,8 @@ void Robot::RobotInit() {
   m_encoder_left.Reset();
   m_encoder_right.Reset();
 
-  m_camera_claw = frc::CameraServer::StartAutomaticCapture("Claw Camera", 0); //check ports
-  m_camera_drive = frc::CameraServer::StartAutomaticCapture("Drive Camera", 1);
-  m_camera_claw.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
+  m_camera_drive = frc::CameraServer::StartAutomaticCapture("Drive Camera", 0);
   m_camera_drive.SetConnectionStrategy(cs::VideoSource::ConnectionStrategy::kConnectionKeepOpen);
-  m_cameraSelection = nt::NetworkTableInstance::GetDefault().GetTable("")->GetEntry("CameraSelection");
-  m_cameraSelection.SetString(m_camera_claw.GetName());
 
   //Check port mapping for joystick and gamepad
   if (m_xbox.GetType() != frc::GenericHID::kXInputGamepad)
@@ -166,17 +161,8 @@ void Robot::AutonomousInit() {
 
 void Robot::AutonomousPeriodic() {
   // place game piece
-  /* if(m_balancing_mode == true)
-  {
-    BalancingMode();
-  }
-  else
-  {
-    if(m_cone_deposit == false)
+   if(m_cone_deposit == false)
     {
-    //extend horizontal thingy (check distance)
-    //release tha claaaw & set m_cone_deposit == true
-    //retract everything???
 
       if(m_encoder_left.GetDistance() <= 10 && m_encoder_right.GetDistance() <= 10)
       {
@@ -198,21 +184,13 @@ void Robot::AutonomousPeriodic() {
 
       }
       else{
-        // drive to the start point of balancing mode
-        if(m_gyro.GetAngle() > 7)
-        {
-          m_balancing_mode = true;
-        }
-        else
-        {
         m_drive_system.TankDrive(-0.8,0.8); // previous .8
-        }
+        
       }
     }
-  } */
+  }
 
   
-}
 
 void Robot::TeleopInit() {
   m_balancing_mode = false;
