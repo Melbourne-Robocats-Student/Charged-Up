@@ -35,7 +35,7 @@
 
 #define BOOST_SPEED (0.9)
 #define NORMAL_SPEED (0.7)
-#define AUTO_BACK_DIST (-100) //240 at 80% speed, 200 at 40%
+#define AUTO_BACK_DIST (-5000) //240 at 80% speed, 200 at 40%
 
 void BalancingMode();
 
@@ -48,12 +48,12 @@ double m_speedmod = 0;
 int m_balanceStateFlag = 0; // Forward = 0, Balanced = 1, Backward = 2
 
 // Motors
-frc::PWMSparkMax m_Spark_left{1};
-frc::PWMSparkMax m_Spark_right{2};
+frc::PWMSparkMax m_Spark_left{2};
+frc::PWMSparkMax m_Spark_right{1};
 
 // Encoders
-frc::Encoder m_encoder_left{2,3, true};  //motor left side
-frc::Encoder m_encoder_right{0,1, false};  //motor right side
+frc::Encoder m_encoder_left{8,9, false};  //motor left side
+frc::Encoder m_encoder_right{6,7, true};  //motor right side
 
 // Drive Config
 frc::DifferentialDrive m_drive_system = frc::DifferentialDrive{m_Spark_left,m_Spark_right};
@@ -88,6 +88,9 @@ void Robot::RobotInit() {
   frc::SmartDashboard::PutData("Left Encoder", &m_encoder_left);
   frc::SmartDashboard::PutData("Right Encoder", &m_encoder_right);
   frc::SmartDashboard::PutData("Drive System", &m_drive_system);
+
+  m_encoder_left.SetDistancePerPulse(1.43); // distance per pulse in inches
+  m_encoder_right.SetDistancePerPulse(1.43); // distance per pulse in inches
 
 
   //encoders for limits
@@ -154,9 +157,6 @@ void Robot::AutonomousInit() {
   // Init encoders
   m_encoder_left.Reset();
   m_encoder_right.Reset();
-
-  m_encoder_left.SetDistancePerPulse(0.084); // distance per pulse in inches
-  m_encoder_right.SetDistancePerPulse(0.07); // distance per pulse in inches
 }
 
 void Robot::AutonomousPeriodic() {
@@ -269,7 +269,7 @@ void Robot::TestPeriodic() {
 
       }
       else{
-        m_drive_system.TankDrive(-0.8,0.8); // previous .8
+        m_drive_system.TankDrive(-0.5,05); // previous .8
       }             
 
 }
