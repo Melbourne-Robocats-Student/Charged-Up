@@ -170,7 +170,9 @@ void Robot::AutonomousPeriodic() {
         }
       else{
         m_drive_system.TankDrive(0,0);
-        m_cone_deposit = true; //COMMENT OUT THIS LINE TO DISABLE MOVE BACKWARD AND BALANCE
+        m_cone_deposit = true;
+          m_encoder_left.Reset();
+          m_encoder_right.Reset(); //COMMENT OUT THIS LINE TO DISABLE MOVE BACKWARD AND BALANCE
 
       }
     }
@@ -252,11 +254,25 @@ void Robot::TeleopPeriodic() {
 
 void Robot::DisabledInit() {}
 
-void Robot::DisabledPeriodic() {}
+void Robot::DisabledPeriodic() {
+  m_encoder_left.Reset();
+  m_encoder_right.Reset();
+}
 
 void Robot::TestInit() {}
 
-void Robot::TestPeriodic() {}
+void Robot::TestPeriodic() {
+        
+ if(m_encoder_left.GetDistance() <= AUTO_BACK_DIST || m_encoder_right.GetDistance() <= AUTO_BACK_DIST)
+      {
+        m_drive_system.TankDrive(0,0);
+
+      }
+      else{
+        m_drive_system.TankDrive(-0.8,0.8); // previous .8
+      }             
+
+}
 
 void Robot::SimulationInit() {}
 
