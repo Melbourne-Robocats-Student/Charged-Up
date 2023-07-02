@@ -35,7 +35,9 @@
 
 #define BOOST_SPEED (0.9)
 #define NORMAL_SPEED (0.7)
-#define AUTO_BACK_DIST (-5000) //240 at 80% speed, 200 at 40%
+#define AUTO_BACK_DIST (-4500) //240 at 80% speed, 200 at 40%
+#define AUTO_CHARGE_DIST (2200)
+#define GO_FORWARD_COUNT (100)
 
 void BalancingMode();
 
@@ -44,8 +46,12 @@ bool m_balancing_mode = false;
 
 bool m_cone_deposit = false;
 
+bool m_out_of_comunity = false;
+
 double m_speedmod = 0;
 int m_balanceStateFlag = 0; // Forward = 0, Balanced = 1, Backward = 2
+
+int m_count = 0;
 
 // Motors
 frc::PWMSparkMax m_Spark_left{2};
@@ -157,6 +163,9 @@ void Robot::AutonomousInit() {
   // Init encoders
   m_encoder_left.Reset();
   m_encoder_right.Reset();
+
+  //Init counter
+  m_count = 0;
 }
 
 void Robot::AutonomousPeriodic() {
@@ -164,9 +173,10 @@ void Robot::AutonomousPeriodic() {
    if(m_cone_deposit == false)
     {
 
-      if(m_encoder_left.GetDistance() <= 50 && m_encoder_right.GetDistance() <= 50)
+      if(m_count < GO_FORWARD_COUNT)
       {
         m_drive_system.TankDrive(0.5,-0.5);
+        m_count = m_count + 1;
         }
       else{
         m_drive_system.TankDrive(0,0);
@@ -177,19 +187,30 @@ void Robot::AutonomousPeriodic() {
       }
     }
     
-    if(m_cone_deposit == true)
+    if(m_cone_deposit == true && m_out_of_comunity == false)
     {
       // Drive toward charging station while less than set distance
       if(m_encoder_left.GetDistance() <= AUTO_BACK_DIST || m_encoder_right.GetDistance() <= AUTO_BACK_DIST)
       {
         m_drive_system.TankDrive(0,0);
-
+        m_out_of_comunity = true;
+         m_encoder_left.Reset();
+          m_encoder_right.Reset();
       }
       else{
-        m_drive_system.TankDrive(-0.8,0.8); // previous .8
+        m_drive_system.TankDrive(-0.78,0.78); // previous .8
         
       }
     }
+   /* if(m_out_of_comunity == true)
+    {
+    if(m_encoder_left.GetDistance() <= AUTO_CHARGE_DIST || m_encoder_right.GetDistance() <= AUTO_CHARGE_DIST)
+    {
+    m_drive_system.TankDrive(0.62,-0.62); //was 0.58
+    }
+    else
+    {m_drive_system.TankDrive(0.0,0.0);}
+     } */
   }
 
   
@@ -223,7 +244,7 @@ void Robot::TeleopPeriodic() {
   std::cout << m_joystick.GetRawButtonPressed(12) << std::endl;
   */
  
-  if(m_xbox.GetBButton()){
+  /*if(m_xbox.GetBButton()){
     // For every pixel
     for (int i = 0; i < kLength; i++) {
     //   // Calculate the hue - hue is easier for rainbows because the colour
@@ -248,7 +269,7 @@ void Robot::TeleopPeriodic() {
     }
      // Set the LEDs
     m_led.SetData(m_ledBuffer);
-  }
+  }*/
 
 }
 
